@@ -1,5 +1,3 @@
-
-#importing libraries 
 import PyPDF2
 
 import nltk
@@ -176,26 +174,39 @@ RESERVED_WORDS = [
     'okul',
 ]
 
+import re
+import spacy
+from nltk.corpus import stopwords
 
-def extract_education(input_text):
-    organizations = []
- 
-    # first get all the organization names using nltk
-    for sent in nltk.sent_tokenize(input_text):
-        for chunk in nltk.ne_chunk(nltk.pos_tag(nltk.word_tokenize(sent))):
-            if hasattr(chunk, 'label') and chunk.label() == 'ORGANIZATION':
-                organizations.append(' '.join(c[0] for c in chunk.leaves()))
- 
-    # we search for each bigram and trigram for reserved words
-    # (college, university etc...)
-    education = set()
-    for org in organizations:
-        for word in RESERVED_WORDS:
-            if org.lower().find(word):
-                education.add(org)
- 
-    return education
- 
- 
+# load pre-trained model
+nlp = spacy.load('en_core_web_sm')
+
+# Grad all general stop words
+STOPWORDS = set(stopwords.words('english'))
+
+# Education Degrees
+EDUCATION = [
+            'BE','B.E.', 'B.E', 'BS', 'B.S','C.A.','c.a.','B.Com','B. Com','M. Com', 'M.Com','M. Com .',
+            'ME', 'M.E', 'M.E.', 'MS', 'M.S',
+            'BTECH', 'B.TECH', 'M.TECH', 'MTECH',
+            'PHD', 'phd', 'ph.d', 'Ph.D.','MBA','mba','graduate', 'post-graduate','5 year integrated masters','masters',
+            'SSC', 'HSC', 'CBSE', 'ICSE', 'X', 'XII','Usha Mittal Institute of Technology','Jawaharlal Nehru University','R.N.Podar'
+        ]
+def extract_education(resume_text):
+    nlp_text = nlp(resume_text)
+    # Sentence Tokenizer
+    nlp_text = [sent.text.strip() for sent in nlp_text.sents]
+    edu = {}
+    # Extract education degree
+    for index, text in enumerate(nlp_text):
+        #print(index, text), print('-'*50)
+        for tex in text.split():
+            # Replace all special symbols
+            tex = re.sub(r'[?|$|.|!|,]', r'', tex)
+            print(tex)
+            if tex.upper() in EDUCATION and tex not in STOPWORDS:
+                edu[tex] = text + nlp_text[index + 1]
+                print (edu.keys())
+    return list(edu.values())
  # noqa: T001
  
